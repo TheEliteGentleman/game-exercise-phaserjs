@@ -1,0 +1,160 @@
+<!doctype html>
+<head>
+    <title>HTML5 games workshop: One-screen platformer</title>
+    <meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+    <meta http-equiv="cleartype" content="on">
+    <meta name="format-detection" content="telephone=no">
+	<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+    <!--
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.13.0/dist/phaser.min.js"></script>
+	-->
+    <script src="js/phaser/phaser.min.js"></script>
+    <script src="js/scenes/game.js"></script>
+	<script type="text/javascript">
+		
+		class GameScene extends Phaser.Scene {
+    
+			constructor() {
+				
+				super({key: 'BootScene'});
+				this.level = 0;
+			}
+			
+			preload() {
+				
+				this.load.json('level:0', 'assets/data/level00.json');
+				this.load.json('level:1', 'assets/data/level01.json');
+
+				this.load.image('font:numbers', 'assets/images/numbers.png');
+
+				this.load.image('icon:coin', 'assets/images/coin_icon.png');
+				this.load.image('background', 'assets/images/background.png');
+				this.load.image('invisible-wall', 'assets/images/invisible_wall.png');
+				this.load.image('ground', 'assets/images/ground.png');
+				this.load.image('grass:8x1', 'assets/images/grass_8x1.png');
+				this.load.image('grass:6x1', 'assets/images/grass_6x1.png');
+				this.load.image('grass:4x1', 'assets/images/grass_4x1.png');
+				this.load.image('grass:2x1', 'assets/images/grass_2x1.png');
+				this.load.image('grass:1x1', 'assets/images/grass_1x1.png');
+				this.load.image('key', 'assets/images/key.png');
+
+				this.load.spritesheet('decoration', 'assets/images/decor.png', { frameWidth: 42, frameHeight: 42 });
+				this.load.spritesheet('hero', 'assets/images/hero.png', { frameWidth: 36, frameHeight: 42 });
+				this.load.spritesheet('coin', 'assets/images/coin_animated.png', { frameWidth: 22, frameHeight: 22 });
+				this.load.spritesheet('spider', 'assets/images/spider.png', { frameWidth: 42, frameHeight: 32 });
+				this.load.spritesheet('door', 'assets/images/door.png', { frameWidth: 42, frameHeight: 66 });
+				this.load.spritesheet('icon:key', 'assets/images/key_icon.png', { frameWidth: 34, frameHeight: 30 });
+
+				this.load.audio('sfx:jump', 'assets/audio/jump.wav');
+				this.load.audio('sfx:coin', 'assets/audio/coin.wav');
+				this.load.audio('sfx:key', 'assets/audio/key.wav');
+				this.load.audio('sfx:stomp', 'assets/audio/stomp.wav');
+				this.load.audio('sfx:door', 'assets/audio/door.wav');
+				this.load.audio('bgm', ['assets/audio/bgm.mp3', 'assets/audio/bgm.ogg']);
+			}
+			
+			create() {
+				// create sound entities
+				this.sfx = {
+					jump: this.sound.add('sfx:jump'),
+					coin: this.sound.add('sfx:coin'),
+					key: this.sound.add('sfx:key'),
+					stomp: this.sound.add('sfx:stomp'),
+					door: this.sound.add('sfx:door')
+				};
+				this.bgm = this.sound.add('bgm');
+				this.bgm.loop = true;
+				
+				// create background image
+				this.add.image(480, 300, 'background'); //Example are explained here: https://phaser.io/tutorials/making-your-first-phaser-3-game/part2
+				
+				var data = this.cache.json.get(`level:${this.level}`);
+				this.loadLevel(data);
+			}
+			
+			update(delta, time) {
+				
+			}
+			
+			loadLevel(data) {
+				this.platforms = this.physics.add.staticGroup();
+				
+				//Load platforms
+				// spawn all platforms
+				data.platforms.forEach(this.spawnPlatform, this);
+				
+				//Add player
+				this.hero = this.physics.add.sprite(data.hero.x, data.hero.y, 'hero');
+				this.hero.setBounce(0.2);
+				this.hero.setCollideWorldBounds(true); //Prevents hero from getting out of screen
+				
+				//Prevent collision
+				this.physics.add.collider(this.hero, this.platforms);
+			}
+			
+			spawnPlatform(platform) {
+				let thisSprite = this.platforms.create(platform.x, platform.y, platform.image).setOrigin(0, 0);
+				if (platform.image == "ground") {
+					thisSprite.scaleY = 2;
+					//this.ground = thisSprite;
+				}
+				thisSprite.refreshBody();
+			}
+		}
+		
+		const CONFIG = {
+			type: Phaser.AUTO,
+			width: 960,
+			height: 600,
+			pixelArt: true,
+			roundPixels: true,
+			parent: 'game',
+			title: "My Gaming test...",
+			physics: {
+				default: 'arcade',
+				arcade: {
+					gravity: { y: 200 }
+					,debug: true
+				}
+			},
+			scene: [GameScene]
+			//fps: 30
+		};
+
+		window.addEventListener('load', ()=>
+		{
+			window.game = new Phaser.Game(CONFIG);
+		});
+	
+	</script>
+	
+    <style>
+        canvas {
+            margin: 0 auto;
+        }
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+             image-rendering: optimizeSpeed;              /* Older versions of FF */
+          image-rendering: -moz-crisp-edges;           /* FF 6.0+ */
+          image-rendering: -webkit-optimize-contrast;  /* Webkit (non standard naming) */
+          image-rendering: -o-crisp-edges;             /* OS X & Windows Opera (12.02+) */
+          image-rendering: crisp-edges;                /* Possible future browsers. */
+          -ms-interpolation-mode: nearest-neighbor;    /* IE (non standard naming) */
+          image-rendering: pixelated;                  /* Chrome 41 */
+        }
+    </style>
+	
+	
+</head>
+<body>
+    <div id="game" style="display: block; width: 100%; text-align: center"></div>
+</body>
